@@ -1,0 +1,12 @@
+services:
+  shonovel-reader:
+    build: .
+    container_name: shonovel-reader
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount thư mục mã nguồn để dev (optional)
+      - .:/app
+      # Mount thư mục dữ liệu Light Novels từ workspace
+      - /home/ubuntu/.openclaw/workspace/projects/light-novels:/home/ubuntu/.openclaw/workspace/projects/light-novels
+    restart: unless-stopped

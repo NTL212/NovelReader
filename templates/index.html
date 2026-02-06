@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sho Reader - Literary Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --reader-bg-light: #f4f1ea;
+            --reader-bg-dark: #121212;
+            --reader-text-light: #2c2c2c;
+            --reader-text-dark: #d1d1d1;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .serif { font-family: 'Crimson Pro', serif; }
+        .reader-mode { max-width: 800px; margin: 0 auto; line-height: 1.8; font-size: 1.25rem; }
+        .bg-sepia { background-color: var(--reader-bg-light); color: var(--reader-text-light); }
+        .dark .bg-reader-dark { background-color: var(--reader-bg-dark); color: var(--reader-text-dark); }
+        .transition-all { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 transition-all">
+
+    <!-- Navigation Bar -->
+    <nav class="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-gray-200 dark:border-zinc-800 p-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">Sho Reader</h1>
+            <div class="flex items-center gap-4">
+                <button id="toggle-dark" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-800">
+                    <svg id="moon-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+                <button id="library-btn" class="text-sm font-medium hover:text-emerald-500">Thư viện</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- App Container -->
+    <main class="max-w-6xl mx-auto p-6 min-h-screen">
+        
+        <!-- Library View -->
+        <section id="library-view" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            <!-- Novels will be injected here -->
+            <div class="animate-pulse bg-zinc-800 h-64 rounded-lg"></div>
+        </section>
+
+        <!-- Chapter List View (Hidden by default) -->
+        <section id="chapter-view" class="hidden">
+            <button id="back-to-lib" class="mb-6 flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Trở về thư viện
+            </button>
+            <h2 id="novel-title" class="text-3xl font-bold mb-8">Tên truyện</h2>
+            <div id="chapter-list" class="grid gap-2">
+                <!-- Chapters will be injected here -->
+            </div>
+        </section>
+
+        <!-- Reader View (Hidden by default) -->
+        <section id="reader-view" class="hidden">
+            <div class="flex justify-between items-center mb-10 border-b border-zinc-800 pb-4">
+                <button id="back-to-chapters" class="text-sm text-gray-500 hover:text-emerald-500">Danh sách chương</button>
+                <div class="flex gap-4">
+                    <button class="text-sm opacity-50" onclick="changeFontSize(-1)">A-</button>
+                    <button class="text-sm opacity-50" onclick="changeFontSize(1)">A+</button>
+                </div>
+            </div>
+            <article id="reader-content" class="serif reader-mode whitespace-pre-wrap">
+                <!-- Content will be injected here -->
+            </article>
+            <div class="mt-20 flex justify-between gap-4">
+                <button id="prev-chap" class="flex-1 p-4 bg-zinc-800 rounded-lg hover:bg-emerald-600 transition-all">Chương trước</button>
+                <button id="next-chap" class="flex-1 p-4 bg-zinc-800 rounded-lg hover:bg-emerald-600 transition-all">Chương sau</button>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="p-10 text-center text-xs text-gray-500 border-t border-zinc-900 mt-20">
+        Sho Reader - Crafted for Thành Lợi
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
