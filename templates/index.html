@@ -351,6 +351,7 @@
                     ← Danh sách chương
                 </button>
                 <div class="flex gap-2 items-center relative">
+                    <span id="chapter-pagination" class="text-xs font-semibold theme-text-secondary mr-2 tracking-widest uppercase"></span>
                     <!-- Settings Toggle -->
                     <button id="reader-settings-btn"
                         class="p-2 rounded-lg theme-bg-secondary hover:bg-emerald-500 hover:text-white transition-smooth focus:ring-2 focus:ring-emerald-500"
@@ -401,6 +402,14 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Chapter Header -->
+            <div class="mb-12 text-center">
+                <div class="w-12 h-1 ml-auto mr-auto bg-emerald-500/30 rounded-full mb-4"></div>
+                <h2 id="current-chapter-title" class="serif text-3xl md:text-4xl font-bold theme-text-primary leading-tight px-4"></h2>
+                <p class="mt-4 text-sm theme-text-secondary italic">Light Novel Experience</p>
+            </div>
+
             <article id="reader-content" class="serif reader-mode whitespace-pre-wrap leading-relaxed">
                 <!-- Content will be injected here -->
             </article>

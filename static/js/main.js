@@ -230,8 +230,13 @@ async function openChapter(index) {
         const res = await fetch(`/api/novel/${currentNovelId}/${chap.id}`);
         const data = await res.json();
 
+        // Set Chapter Title and Content
+        document.getElementById('current-chapter-title').innerText = chap.title;
         const contentEl = document.getElementById('reader-content');
         contentEl.innerHTML = data.content;
+
+        // Update Pagination Info
+        document.getElementById('chapter-pagination').innerText = `Chương ${index + 1} / ${chapters.length}`;
 
         // Mark session
         localStorage.setItem('last_read_session', JSON.stringify({
