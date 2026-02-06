@@ -151,8 +151,11 @@ async function loadLibrary() {
                      role="button"
                      aria-label="Đọc truyện ${novel.title}"
                      onkeydown="if(event.key==='Enter') loadChapters('${novel.id}')">
-                    <div class="novel-card aspect-[2/3] rounded-2xl mb-3 overflow-hidden border border-gray-200 dark:border-zinc-700 group-hover:border-emerald-500 transition-smooth flex items-center justify-center p-4">
-                        <span class="text-gray-500 dark:text-zinc-400 group-hover:text-emerald-500 text-center font-semibold text-sm leading-tight">${novel.title}</span>
+                    <div class="novel-card aspect-[2/3] rounded-2xl mb-3 overflow-hidden border border-gray-200 dark:border-zinc-700 group-hover:border-emerald-500 transition-smooth flex flex-col items-center justify-center p-4">
+                        <span class="text-gray-500 dark:text-zinc-400 group-hover:text-emerald-500 text-center font-semibold text-sm leading-tight mb-2">${novel.title}</span>
+                        <div class="flex flex-wrap gap-1 justify-center">
+                            ${novel.tags ? novel.tags.map(tag => `<span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] rounded-md border border-emerald-500/20 uppercase tracking-tighter">${tag}</span>`).join('') : ''}
+                        </div>
                     </div>
                     <h3 class="font-medium text-sm text-gray-700 dark:text-gray-200 group-hover:text-emerald-500 transition-smooth truncate">${novel.title}</h3>
                 </div>

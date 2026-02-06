@@ -14,6 +14,7 @@ DB_NAME = "shonovel_db"
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 collection = db["chapters"]
+novel_meta_collection = db["novels"] # Collection mới cho metadata truyện
 
 # Xác định thư mục gốc của ứng dụng (nơi chứa app.py)
 BASE_DIR = Path(__file__).resolve().parent
@@ -43,14 +44,16 @@ async def read_root(request: Request):
 
 @app.get("/api/library")
 async def get_library():
-    """Lấy danh sách các bộ truyện từ DB."""
-    # Lấy danh sách novel_id duy nhất
+    """Lấy danh sách các bộ truyện từ DB kèm metadata."""
     novel_ids = collection.distinct("novel_id")
     novels = []
     for nid in novel_ids:
+        # Lấy thêm tags/info từ novel_meta_collection nếu có
+        meta = novel_meta_collection.find_one({"novel_id": nid}, {"_id": 0})
         novels.append({
             "id": nid,
             "title": nid.replace("-", " ").title(),
+            "tags": meta.get("tags", []) if meta else [],
             "source": "database"
         })
     return novels
@@ -58,7 +61,6 @@ async def get_library():
 @app.get("/api/novel/{novel_id}/chapters")
 async def get_chapters(novel_id: str):
     """Lấy danh sách chương từ MongoDB."""
-    # Chỉ lấy các trường cần thiết để nhẹ response
     cursor = collection.find(
         {"novel_id": novel_id},
         {"chapter_number": 1, "title": 1, "_id": 0}
@@ -78,7 +80,6 @@ async def get_chapters(novel_id: str):
 @app.get("/api/novel/{novel_id}/{chapter_id}")
 async def get_chapter_content(novel_id: str, chapter_id: str):
     """Lấy nội dung chi tiết của một chương từ MongoDB."""
-    # Parse chapter_number từ chapter_id (e.g., chapter-45 -> 45)
     try:
         chapter_num = int(chapter_id.split("-")[-1])
     except (ValueError, IndexError):
