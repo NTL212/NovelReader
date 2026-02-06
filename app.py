@@ -10,21 +10,23 @@ app = FastAPI(title="Sho Reader")
 # Đường dẫn đến thư mục chứa Light Novels
 BASE_LN_PATH = Path("/home/ubuntu/.openclaw/workspace/projects/light-novels/active")
 
-# Tự động xác định đường dẫn thư mục hiện tại
-CURRENT_DIR = Path(__file__).parent
+# Xác định thư mục gốc của ứng dụng (nơi chứa app.py)
+BASE_DIR = Path(__file__).resolve().parent
 
-# Cấu hình Static và Templates dựa trên môi trường (Docker hay Local)
-STATIC_DIR = CURRENT_DIR / "static"
-TEMPLATES_DIR = CURRENT_DIR / "templates"
+# Cấu hình Static và Templates
+# Trong Docker, BASE_DIR sẽ là /app
+# Thư mục static và templates sẽ nằm ngay tại /app/static và /app/templates
+static_dir = BASE_DIR / "static"
+templates_dir = BASE_DIR / "templates"
 
-# Nếu không thấy ở root, thử tìm trong subfolder (để tương thích local workspace)
-if not STATIC_DIR.exists():
-    STATIC_DIR = CURRENT_DIR / "projects" / "shonovel-reader" / "static"
-if not TEMPLATES_DIR.exists():
-    TEMPLATES_DIR = CURRENT_DIR / "projects" / "shonovel-reader" / "templates"
+if not static_dir.exists():
+    # Fallback cho môi trường local workspace
+    static_dir = BASE_DIR / "projects" / "shonovel-reader" / "static"
+if not templates_dir.exists():
+    templates_dir = BASE_DIR / "projects" / "shonovel-reader" / "templates"
 
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+templates = Jinja2Templates(directory=str(templates_dir))
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
@@ -54,8 +56,7 @@ async def get_chapters(novel_id: str):
         raise HTTPException(status_code=404, detail="Novel chapters not found")
     
     chapters = []
-    # Lấy danh sách file .txt và sắp xếp theo số chương
-    files = sorted(chapter_path.glob("chapter-*.txt"), key=lambda x: int(x.stem.split("-")[-1]))
+    files = sorted(chapter_path.glob("chapter-*.txt"), key=lambda x: int(x.stem.split("-")[-1]) if x.stem.split("-")[-1].isdigit() else 0)
     for f in files:
         chapters.append({
             "id": f.stem,
