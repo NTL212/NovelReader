@@ -294,6 +294,7 @@ function switchView(view) {
     chapterView.classList.add('hidden');
     readerView.classList.add('hidden');
     progressContainer.classList.add('hidden'); // Default hide progress
+    document.getElementById('reader-footer-nav').classList.add('hidden');
 
     if (view === 'library') {
         libraryView.classList.remove('hidden');
@@ -306,6 +307,7 @@ function switchView(view) {
     if (view === 'reader') {
         readerView.classList.remove('hidden');
         progressContainer.classList.remove('hidden'); // Show progress in reader
+        document.getElementById('reader-footer-nav').classList.remove('hidden');
     }
 }
 
