@@ -4,42 +4,30 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-
-try:
-    from titles import CHAPTER_TITLES
-except ImportError:
-    CHAPTER_TITLES = {}
+from pymongo import MongoClient
 
 app = FastAPI(title="Sho Reader")
 
-# Đường dẫn đến thư mục chứa Light Novels
-BASE_LN_PATH = Path("/home/ubuntu/.openclaw/workspace/projects/light-novels/active")
+# Cấu hình MongoDB
+MONGO_URI = os.getenv("MONGO_URI", "mongodb+srv://loint2101_db_user:Lcz2TWDTbWfSqJna@cluster0.cdad8y0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+DB_NAME = "shonovel_db"
+client = MongoClient(MONGO_URI)
+db = client[DB_NAME]
+collection = db["chapters"]
 
 # Xác định thư mục gốc của ứng dụng (nơi chứa app.py)
 BASE_DIR = Path(__file__).resolve().parent
 
 # Tìm thư mục static và templates một cách linh hoạt
 def find_path(dir_name: str):
-    # Ưu tiên kiểm tra cùng cấp với app.py (Docker style)
     local_path = BASE_DIR / dir_name
     if local_path.exists():
         return local_path
-    
-    # Check trong thư mục project (Workspace style)
-    workspace_path = BASE_DIR / "projects" / "shonovel-reader" / dir_name
-    if workspace_path.exists():
-        return workspace_path
-    
-    # Fallback cuối cùng
     return local_path
 
 static_dir = find_path("static")
 templates_dir = find_path("templates")
 
-print(f"DEBUG: Using static_dir={static_dir}")
-print(f"DEBUG: Using templates_dir={templates_dir}")
-
-# Đảm bảo thư mục tồn tại để tránh crash khi khởi động
 os.makedirs(static_dir, exist_ok=True)
 os.makedirs(templates_dir, exist_ok=True)
 
@@ -55,52 +43,59 @@ async def read_root(request: Request):
 
 @app.get("/api/library")
 async def get_library():
-    """Lấy danh sách các bộ truyện hiện có."""
+    """Lấy danh sách các bộ truyện từ DB."""
+    # Lấy danh sách novel_id duy nhất
+    novel_ids = collection.distinct("novel_id")
     novels = []
-    if not BASE_LN_PATH.exists():
-        return novels
-    
-    for novel_dir in BASE_LN_PATH.iterdir():
-        if novel_dir.is_dir():
-            novels.append({
-                "id": novel_dir.name,
-                "title": novel_dir.name.replace("-", " ").title(),
-                "path": str(novel_dir)
-            })
+    for nid in novel_ids:
+        novels.append({
+            "id": nid,
+            "title": nid.replace("-", " ").title(),
+            "source": "database"
+        })
     return novels
 
 @app.get("/api/novel/{novel_id}/chapters")
 async def get_chapters(novel_id: str):
-    """Lấy danh sách chương của một bộ truyện."""
-    chapter_path = BASE_LN_PATH / novel_id / "translated" / "vn"
-    if not chapter_path.exists():
-        raise HTTPException(status_code=404, detail="Novel chapters not found")
+    """Lấy danh sách chương từ MongoDB."""
+    # Chỉ lấy các trường cần thiết để nhẹ response
+    cursor = collection.find(
+        {"novel_id": novel_id},
+        {"chapter_number": 1, "title": 1, "_id": 0}
+    ).sort("chapter_number", 1)
     
     chapters = []
-    files = sorted(chapter_path.glob("chapter-*.txt"), key=lambda x: int(x.stem.split("-")[-1]) if x.stem.split("-")[-1].isdigit() else 0)
-    for f in files:
-        chapter_id = f.stem
-        # Lấy tiêu đề từ mapping, nếu không có thì dùng mặc định
-        title = CHAPTER_TITLES.get(novel_id, {}).get(chapter_id, chapter_id.replace("-", " ").title())
+    for doc in cursor:
         chapters.append({
-            "id": chapter_id,
-            "title": title
+            "id": f"chapter-{doc['chapter_number']}",
+            "title": doc.get("title", f"Chương {doc['chapter_number']}")
         })
+    
+    if not chapters:
+        raise HTTPException(status_code=404, detail="Novel not found in database")
     return chapters
 
 @app.get("/api/novel/{novel_id}/{chapter_id}")
 async def get_chapter_content(novel_id: str, chapter_id: str):
-    """Lấy nội dung chi tiết của một chương."""
-    file_path = BASE_LN_PATH / novel_id / "translated" / "vn" / f"{chapter_id}.txt"
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Chapter not found")
+    """Lấy nội dung chi tiết của một chương từ MongoDB."""
+    # Parse chapter_number từ chapter_id (e.g., chapter-45 -> 45)
+    try:
+        chapter_num = int(chapter_id.split("-")[-1])
+    except (ValueError, IndexError):
+        raise HTTPException(status_code=400, detail="Invalid chapter ID format")
+
+    doc = collection.find_one(
+        {"novel_id": novel_id, "chapter_number": chapter_num},
+        {"content": 1, "title": 1, "_id": 0}
+    )
     
-    with open(file_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Chapter not found in database")
     
     return {
         "id": chapter_id,
-        "content": content
+        "title": doc.get("title"),
+        "content": doc.get("content")
     }
 
 if __name__ == "__main__":

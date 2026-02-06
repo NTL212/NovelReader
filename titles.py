@@ -41,5 +41,15 @@ CHAPTER_TITLES = {
         "chapter-38": "Chương 38: Đáng lẽ chỉ có hai ta",
         "chapter-39": "Chương 39: Sự thay đổi trong thâm tâm",
         "chapter-40": "Chương 40: Cuối tuần +1 (Phần Một)",
+        "chapter-41": "Chương 41: Cuối tuần +1 (Phần hai)",
+        "chapter-42": "Chương 42: Mọi thứ vẫn diễn ra như thường ư?",
+        "chapter-43": "Chương 43: Cuối cùng, chúng tôi cũng được ở riêng",
+        "chapter-44": "Chương 44: Đồ Ngốc",
+        "chapter-45": "Chương 45: Chỉ một chút nữa thôi",
+        "chapter-46": "Chương 46: Bạn",
+        "chapter-47": "Chương 47: Đưa tay cậu ra nào",
+        "chapter-48": "Chương 48: Nỗi lo lắng",
+        "chapter-49": "Chương 49: Chuẩn bị cho lễ hội",
+        "chapter-50": "Chương 50: Lễ hội bắt đầu",
     }
 }
