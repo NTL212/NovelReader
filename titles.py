@@ -21,5 +21,15 @@ CHAPTER_TITLES = {
         "chapter-18": "Chương 18: Lời thú nhận thầm lặng",
         "chapter-19": "Chương 19: Tiến gần hơn một chút",
         "chapter-20": "Chương 20: Làm bạn với người dễ thương nhì lớp",
+        "chapter-21": "Chương 21: Thói quen mới",
+        "chapter-22": "Chương 22: Buổi học nhóm tại thư viện",
+        "chapter-23": "Chương 23: Áp lực từ những người xung quanh",
+        "chapter-24": "Chương 24: Lời động viên chân thành",
+        "chapter-25": "Chương 25: Bí mật giữa hai người (Tiếp diễn)",
+        "chapter-26": "Chương 26: Buổi hẹn hò không chính thức",
+        "chapter-27": "Chương 27: Những suy nghĩ rối bời",
+        "chapter-28": "Chương 28: Món quà bất ngờ",
+        "chapter-29": "Chương 29: Khoảnh khắc yên bình",
+        "chapter-30": "Chương 30: Bữa sáng cùng Asanagi",
     }
 }
