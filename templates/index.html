@@ -1,85 +1,303 @@
 <!DOCTYPE html>
 <html lang="vi" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sho Reader - Literary Experience</title>
+    <meta name="description"
+        content="Sho Reader - Ứng dụng đọc Light Novel tiếng Việt với giao diện hiện đại và trải nghiệm đọc tuyệt vời.">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --reader-bg-light: #f4f1ea;
-            --reader-bg-dark: #121212;
-            --reader-text-light: #2c2c2c;
-            --reader-text-dark: #d1d1d1;
+            --reader-bg-dark: #0a0a0a;
+            --reader-text-light: #1a1a1a;
+            --reader-text-dark: #e5e5e5;
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.15);
         }
-        body { font-family: 'Inter', sans-serif; }
-        .serif { font-family: 'Crimson Pro', serif; }
-        .reader-mode { max-width: 800px; margin: 0 auto; line-height: 1.8; font-size: 1.25rem; }
-        .bg-sepia { background-color: var(--reader-bg-light); color: var(--reader-text-light); }
-        .dark .bg-reader-dark { background-color: var(--reader-bg-dark); color: var(--reader-text-dark); }
-        .transition-all { transition: all 0.3s ease; }
-    </style>
-</head>
-<body class="bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 transition-all">
 
-    <!-- Navigation Bar -->
-    <nav class="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-gray-200 dark:border-zinc-800 p-4">
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .serif {
+            font-family: 'Crimson Pro', serif;
+        }
+
+        .reader-mode {
+            max-width: 720px;
+            margin: 0 auto;
+            line-height: 1.9;
+            font-size: 1.2rem;
+            letter-spacing: 0.01em;
+        }
+
+        .bg-sepia {
+            background-color: var(--reader-bg-light);
+            color: var(--reader-text-light);
+        }
+
+        .dark .bg-reader-dark {
+            background-color: var(--reader-bg-dark);
+            color: var(--reader-text-dark);
+        }
+
+        /* Focus visible for keyboard navigation */
+        *:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Smooth transitions */
+        .transition-smooth {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Premium card effects */
+        .novel-card {
+            background: linear-gradient(145deg,
+                    rgba(39, 39, 42, 0.8) 0%,
+                    rgba(24, 24, 27, 0.9) 100%);
+            box-shadow:
+                0 4px 6px -1px rgba(0, 0, 0, 0.2),
+                0 2px 4px -2px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .light .novel-card {
+            background: linear-gradient(145deg,
+                    rgba(255, 255, 255, 0.95) 0%,
+                    rgba(249, 250, 251, 0.9) 100%);
+            box-shadow:
+                0 4px 6px -1px rgba(0, 0, 0, 0.08),
+                0 2px 4px -2px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .novel-card:hover {
+            transform: translateY(-4px);
+            box-shadow:
+                0 20px 25px -5px rgba(0, 0, 0, 0.25),
+                0 8px 10px -6px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Floating navbar */
+        .floating-nav {
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+        }
+
+        /* Skeleton loading animation */
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg,
+                    rgba(39, 39, 42, 0.6) 25%,
+                    rgba(63, 63, 70, 0.8) 50%,
+                    rgba(39, 39, 42, 0.6) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        .light .skeleton {
+            background: linear-gradient(90deg,
+                    rgba(229, 231, 235, 0.8) 25%,
+                    rgba(243, 244, 246, 1) 50%,
+                    rgba(229, 231, 235, 0.8) 75%);
+            background-size: 200% 100%;
+        }
+
+        /* Button hover glow */
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn-primary:hover::before {
+            opacity: 1;
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        accent: '#10b981',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-gray-50 dark:bg-zinc-950 text-gray-800 dark:text-gray-100 transition-smooth min-h-screen">
+
+    <!-- Floating Navigation Bar -->
+    <nav
+        class="floating-nav fixed top-4 left-4 right-4 z-50 bg-white/90 dark:bg-zinc-900/90 rounded-2xl border border-gray-200 dark:border-zinc-800 px-6 py-4 shadow-lg shadow-black/5 dark:shadow-black/20">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">Sho Reader</h1>
-            <div class="flex items-center gap-4">
-                <button id="toggle-dark" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-800">
-                    <svg id="moon-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            <h1 class="text-xl font-semibold tracking-tight">
+                <span class="bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">Sho
+                    Reader</span>
+            </h1>
+            <div class="flex items-center gap-3">
+                <button id="toggle-dark"
+                    class="p-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
+                    aria-label="Chuyển đổi chế độ sáng/tối">
+                    <svg id="moon-icon" class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                        </path>
+                    </svg>
+                    <svg id="sun-icon" class="w-5 h-5 text-gray-600 dark:text-gray-300 hidden" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+                        </path>
+                    </svg>
                 </button>
-                <button id="library-btn" class="text-sm font-medium hover:text-emerald-500">Thư viện</button>
+                <button id="library-btn"
+                    class="px-4 py-2 text-sm font-medium rounded-xl bg-gray-100 dark:bg-zinc-800 hover:bg-emerald-500 hover:text-white transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950">
+                    Thư viện
+                </button>
             </div>
         </div>
     </nav>
 
-    <!-- App Container -->
-    <main class="max-w-6xl mx-auto p-6 min-h-screen">
-        
+    <!-- App Container - with top padding for floating nav -->
+    <main class="max-w-6xl mx-auto px-6 pt-28 pb-10 min-h-screen">
+
         <!-- Library View -->
-        <section id="library-view" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            <!-- Novels will be injected here -->
-            <div class="animate-pulse bg-zinc-800 h-64 rounded-lg"></div>
+        <section id="library-view">
+            <!-- Loading Skeletons -->
+            <div id="library-skeleton" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+                <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+                <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+                <div class="skeleton aspect-[2/3] rounded-2xl"></div>
+                <div class="skeleton aspect-[2/3] rounded-2xl hidden md:block"></div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-center">
+                <div class="w-24 h-24 mb-6 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+                    <svg class="w-12 h-12 text-gray-400 dark:text-zinc-500" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Thư viện trống</h3>
+                <p class="text-gray-500 dark:text-zinc-400 max-w-sm">Chưa có truyện nào trong thư viện. Hãy thêm Light
+                    Novel để bắt đầu đọc.</p>
+            </div>
+
+            <!-- Novel Grid -->
+            <div id="novel-grid" class="hidden grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                <!-- Novels will be injected here -->
+            </div>
         </section>
 
         <!-- Chapter List View (Hidden by default) -->
         <section id="chapter-view" class="hidden">
-            <button id="back-to-lib" class="mb-6 flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-500">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Trở về thư viện
+            <button id="back-to-lib"
+                class="mb-8 flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-zinc-400 hover:text-emerald-500 transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 rounded-lg px-2 py-1 -ml-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Trở về thư viện
             </button>
-            <h2 id="novel-title" class="text-3xl font-bold mb-8">Tên truyện</h2>
-            <div id="chapter-list" class="grid gap-2">
+            <h2 id="novel-title"
+                class="text-3xl font-bold mb-8 bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+                Tên truyện</h2>
+            <div id="chapter-list" class="grid gap-3">
                 <!-- Chapters will be injected here -->
             </div>
         </section>
 
         <!-- Reader View (Hidden by default) -->
         <section id="reader-view" class="hidden">
-            <div class="flex justify-between items-center mb-10 border-b border-zinc-800 pb-4">
-                <button id="back-to-chapters" class="text-sm text-gray-500 hover:text-emerald-500">Danh sách chương</button>
-                <div class="flex gap-4">
-                    <button class="text-sm opacity-50" onclick="changeFontSize(-1)">A-</button>
-                    <button class="text-sm opacity-50" onclick="changeFontSize(1)">A+</button>
+            <div class="flex justify-between items-center mb-10 border-b border-gray-200 dark:border-zinc-800 pb-4">
+                <button id="back-to-chapters"
+                    class="text-sm font-medium text-gray-500 dark:text-zinc-400 hover:text-emerald-500 transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 rounded-lg px-2 py-1 -ml-2">
+                    ← Danh sách chương
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="changeFontSize(-1)"
+                        class="px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500"
+                        aria-label="Giảm cỡ chữ">
+                        A-
+                    </button>
+                    <button onclick="changeFontSize(1)"
+                        class="px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500"
+                        aria-label="Tăng cỡ chữ">
+                        A+
+                    </button>
                 </div>
             </div>
-            <article id="reader-content" class="serif reader-mode whitespace-pre-wrap">
+            <article id="reader-content"
+                class="serif reader-mode whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed">
                 <!-- Content will be injected here -->
             </article>
             <div class="mt-20 flex justify-between gap-4">
-                <button id="prev-chap" class="flex-1 p-4 bg-zinc-800 rounded-lg hover:bg-emerald-600 transition-all">Chương trước</button>
-                <button id="next-chap" class="flex-1 p-4 bg-zinc-800 rounded-lg hover:bg-emerald-600 transition-all">Chương sau</button>
+                <button id="prev-chap"
+                    class="btn-primary flex-1 p-4 bg-gray-200 dark:bg-zinc-800 rounded-xl font-medium hover:bg-emerald-500 hover:text-white transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950">
+                    ← Chương trước
+                </button>
+                <button id="next-chap"
+                    class="btn-primary flex-1 p-4 bg-gray-200 dark:bg-zinc-800 rounded-xl font-medium hover:bg-emerald-500 hover:text-white transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950">
+                    Chương sau →
+                </button>
             </div>
         </section>
 
     </main>
 
-    <footer class="p-10 text-center text-xs text-gray-500 border-t border-zinc-900 mt-20">
-        Sho Reader - Crafted for Thành Lợi
+    <footer
+        class="py-10 text-center text-sm text-gray-500 dark:text-zinc-500 border-t border-gray-200 dark:border-zinc-800 mt-10">
+        <p class="mb-2">Sho Reader - Crafted for Thành Lợi</p>
+        <p class="text-xs text-gray-400 dark:text-zinc-600">Built with ♥ for the best reading experience</p>
     </footer>
 
     <script src="/static/js/main.js"></script>
 </body>
+
 </html>

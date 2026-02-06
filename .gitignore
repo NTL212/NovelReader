@@ -9,3 +9,4 @@ ENV/
 
 # Dữ liệu truyện (nên giữ local để tránh bản quyền trên GitHub)
 projects/light-novels/
+.shared/ui-ux-pro-max
