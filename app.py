@@ -13,24 +13,40 @@ BASE_LN_PATH = Path("/home/ubuntu/.openclaw/workspace/projects/light-novels/acti
 # Xác định thư mục gốc của ứng dụng (nơi chứa app.py)
 BASE_DIR = Path(__file__).resolve().parent
 
-# Cấu hình Static và Templates
-# Trong Docker, BASE_DIR sẽ là /app
-# Thư mục static và templates sẽ nằm ngay tại /app/static và /app/templates
-static_dir = BASE_DIR / "static"
-templates_dir = BASE_DIR / "templates"
+# Tìm thư mục static và templates một cách linh hoạt
+def find_path(dir_name: str):
+    # Ưu tiên kiểm tra cùng cấp với app.py (Docker style)
+    local_path = BASE_DIR / dir_name
+    if local_path.exists():
+        return local_path
+    
+    # Check trong thư mục project (Workspace style)
+    workspace_path = BASE_DIR / "projects" / "shonovel-reader" / dir_name
+    if workspace_path.exists():
+        return workspace_path
+    
+    # Fallback cuối cùng
+    return local_path
 
-if not static_dir.exists():
-    # Fallback cho môi trường local workspace
-    static_dir = BASE_DIR / "projects" / "shonovel-reader" / "static"
-if not templates_dir.exists():
-    templates_dir = BASE_DIR / "projects" / "shonovel-reader" / "templates"
+static_dir = find_path("static")
+templates_dir = find_path("templates")
+
+print(f"DEBUG: Using static_dir={static_dir}")
+print(f"DEBUG: Using templates_dir={templates_dir}")
+
+# Đảm bảo thư mục tồn tại để tránh crash khi khởi động
+os.makedirs(static_dir, exist_ok=True)
+os.makedirs(templates_dir, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 templates = Jinja2Templates(directory=str(templates_dir))
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    try:
+        return templates.TemplateResponse("index.html", {"request": request})
+    except Exception as e:
+        return HTMLResponse(content=f"Error loading template: {str(e)}", status_code=500)
 
 @app.get("/api/library")
 async def get_library():
