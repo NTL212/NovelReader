@@ -10,13 +10,21 @@ app = FastAPI(title="Sho Reader")
 # Đường dẫn đến thư mục chứa Light Novels
 BASE_LN_PATH = Path("/home/ubuntu/.openclaw/workspace/projects/light-novels/active")
 
-# Cấu hình Static và Templates
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-    templates = Jinja2Templates(directory="templates")
-else:
-    app.mount("/static", StaticFiles(directory="projects/shonovel-reader/static"), name="static")
-    templates = Jinja2Templates(directory="projects/shonovel-reader/templates")
+# Tự động xác định đường dẫn thư mục hiện tại
+CURRENT_DIR = Path(__file__).parent
+
+# Cấu hình Static và Templates dựa trên môi trường (Docker hay Local)
+STATIC_DIR = CURRENT_DIR / "static"
+TEMPLATES_DIR = CURRENT_DIR / "templates"
+
+# Nếu không thấy ở root, thử tìm trong subfolder (để tương thích local workspace)
+if not STATIC_DIR.exists():
+    STATIC_DIR = CURRENT_DIR / "projects" / "shonovel-reader" / "static"
+if not TEMPLATES_DIR.exists():
+    TEMPLATES_DIR = CURRENT_DIR / "projects" / "shonovel-reader" / "templates"
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
