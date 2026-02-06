@@ -5,16 +5,21 @@ const readerView = document.getElementById('reader-view');
 const librarySkeleton = document.getElementById('library-skeleton');
 const emptyState = document.getElementById('empty-state');
 const novelGrid = document.getElementById('novel-grid');
+const progressBar = document.getElementById('reading-progress-bar');
+const progressContainer = document.getElementById('reading-progress-container');
 
 // State
 let currentNovelId = '';
 let chapters = [];
 let currentChapterIndex = -1;
+let scrollTimeout;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadLibrary();
     setupTheme();
+    loadFontSize(); // Restore font size preference
+    setupScrollTracking();
 });
 
 // Theme Setup with icon toggle
@@ -76,6 +81,9 @@ async function loadLibrary() {
             emptyState.classList.remove('flex');
             novelGrid.classList.remove('hidden');
 
+            // Check for last read
+            const lastReadHtml = renderLastReadSection(data);
+
             novelGrid.innerHTML = data.map(novel => `
                 <div onclick="loadChapters('${novel.id}')" 
                      class="group cursor-pointer focus-within:ring-2 focus-within:ring-emerald-500 rounded-2xl"
@@ -89,6 +97,12 @@ async function loadLibrary() {
                     <h3 class="font-medium text-sm text-gray-700 dark:text-gray-200 group-hover:text-emerald-500 transition-smooth truncate">${novel.title}</h3>
                 </div>
             `).join('');
+
+            // Prepend last read if exists
+            if (lastReadHtml) {
+                // Optional: Insert last read section above grid
+                // For now, let's keep it simple or implement a separate "Continue Reading" banner later
+            }
         }
     } catch (error) {
         console.error('Failed to load library:', error);
@@ -96,6 +110,14 @@ async function loadLibrary() {
         emptyState.classList.remove('hidden');
         emptyState.classList.add('flex');
     }
+}
+
+// Helper to render last read (placeholder for now)
+function renderLastReadSection(novels) {
+    const lastRead = JSON.parse(localStorage.getItem('last_read_session'));
+    if (!lastRead) return '';
+    // Implementation for "Continue Reading" banner can go here
+    return '';
 }
 
 // Load Chapters
@@ -109,16 +131,30 @@ async function loadChapters(novelId) {
         document.getElementById('novel-title').innerText = novelId.replace(/-/g, " ").title();
         const list = document.getElementById('chapter-list');
 
-        list.innerHTML = chapters.map((chap, index) => `
+        // Get progress for each chapter to show visual indicator
+        list.innerHTML = chapters.map((chap, index) => {
+            const progress = getChapterProgress(novelId, index);
+            const isRead = progress > 90;
+            const inProgress = progress > 0 && progress <= 90;
+
+            let statusIcon = '';
+            if (isRead) statusIcon = `<span class="text-emerald-500 text-xs flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                Đã đọc
+            </span>`;
+            else if (inProgress) statusIcon = `<span class="text-amber-500 text-xs font-medium">${Math.round(progress)}%</span>`;
+
+            return `
             <div onclick="openChapter(${index})" 
-                 class="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 cursor-pointer hover:border-emerald-500 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-smooth focus-within:ring-2 focus-within:ring-emerald-500"
+                 class="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 cursor-pointer hover:border-emerald-500 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-smooth focus-within:ring-2 focus-within:ring-emerald-500 flex justify-between items-center"
                  tabindex="0"
                  role="button"
                  aria-label="Đọc ${chap.title}"
                  onkeydown="if(event.key==='Enter') openChapter(${index})">
                 <span class="text-gray-700 dark:text-gray-200">${chap.title}</span>
+                ${statusIcon}
             </div>
-        `).join('');
+        `}).join('');
 
         switchView('chapters');
     } catch (error) {
@@ -138,13 +174,31 @@ async function openChapter(index) {
 
         const contentEl = document.getElementById('reader-content');
         contentEl.innerHTML = data.content;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Mark session
+        localStorage.setItem('last_read_session', JSON.stringify({
+            novelId: currentNovelId,
+            chapterIndex: index,
+            chapterTitle: chap.title,
+            timestamp: Date.now()
+        }));
+
+        // Restore scroll position
+        const savedScroll = getSavedScroll(currentNovelId, index);
+        if (savedScroll > 0) {
+            // Slight delay to ensure content renders
+            setTimeout(() => {
+                window.scrollTo({ top: savedScroll, behavior: 'auto' });
+            }, 50);
+        } else {
+            window.scrollTo({ top: 0, behavior: 'auto' });
+        }
 
         // Update navigation buttons state
         updateNavButtons();
 
         switchView('reader');
-        saveProgress(currentNovelId, index);
+        // saveProgress is handled by scroll listener now
     } catch (error) {
         console.error('Failed to load chapter:', error);
     }
@@ -181,19 +235,20 @@ function switchView(view) {
     libraryView.classList.add('hidden');
     chapterView.classList.add('hidden');
     readerView.classList.add('hidden');
+    progressContainer.classList.add('hidden'); // Default hide progress
 
     if (view === 'library') {
         libraryView.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     if (view === 'chapters') {
         chapterView.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     if (view === 'reader') {
         readerView.classList.remove('hidden');
+        progressContainer.classList.remove('hidden'); // Show progress in reader
     }
-
-    // Scroll to top on view change
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Navigation Event Listeners
@@ -227,13 +282,68 @@ function changeFontSize(delta) {
 function loadFontSize() {
     const savedSize = localStorage.getItem('reader-font-size');
     if (savedSize) {
-        document.getElementById('reader-content').style.fontSize = savedSize + 'px';
+        const el = document.getElementById('reader-content');
+        if (el) el.style.fontSize = savedSize + 'px';
     }
 }
 
-// Save reading progress
+// Save reading progress (Legacy simpler version)
 function saveProgress(novelId, index) {
     localStorage.setItem(`progress_${novelId}`, index);
+}
+
+// --- NEW SCROLL TRACKING LOGIC ---
+
+function setupScrollTracking() {
+    window.addEventListener('scroll', () => {
+        if (readerView.classList.contains('hidden')) return;
+
+        // Cancel previous timeout
+        if (scrollTimeout) {
+            window.cancelAnimationFrame(scrollTimeout);
+        }
+
+        // Use requestAnimationFrame for smooth UI updates
+        scrollTimeout = window.requestAnimationFrame(() => {
+            updateProgress();
+        });
+    });
+}
+
+function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+
+    // Prevent division by zero
+    if (docHeight <= 0) return;
+
+    const scrollPercent = (scrollTop / docHeight) * 100;
+
+    // Update UI
+    progressBar.style.width = scrollPercent + '%';
+
+    // Save to localStorage (Throttled could be better here, but for now simple check)
+    if (currentNovelId && currentChapterIndex >= 0) {
+        // Only save every 1% change or if multiple pixels moved to avoid spamming too much?
+        // Actually localStorage sync is fast enough for text apps.
+
+        const key = `scroll_${currentNovelId}_${currentChapterIndex}`;
+        localStorage.setItem(key, Math.floor(scrollTop));
+
+        // Also save percentage for chapter list view
+        const progressKey = `percent_${currentNovelId}_${currentChapterIndex}`;
+        localStorage.setItem(progressKey, scrollPercent.toFixed(1));
+    }
+}
+
+function getSavedScroll(novelId, index) {
+    const key = `scroll_${novelId}_${index}`;
+    return parseInt(localStorage.getItem(key)) || 0;
+}
+
+function getChapterProgress(novelId, index) {
+    const key = `percent_${novelId}_${index}`;
+    return parseFloat(localStorage.getItem(key)) || 0;
 }
 
 // String title case helper
