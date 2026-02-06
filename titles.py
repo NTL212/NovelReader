@@ -31,5 +31,15 @@ CHAPTER_TITLES = {
         "chapter-28": "Chương 28: Món quà bất ngờ",
         "chapter-29": "Chương 29: Khoảnh khắc yên bình",
         "chapter-30": "Chương 30: Bữa sáng cùng Asanagi",
+        "chapter-31": "Chương 31: Cậu không hề thiếu sót",
+        "chapter-32": "Chương 32: Gia đình của Asanagi",
+        "chapter-33": "Chương 33: Một lần nữa, Amami-san",
+        "chapter-34": "Chương 34: Thiên tài Amami",
+        "chapter-35": "Chương 35: Sự thay đổi trong lớp học",
+        "chapter-36": "Chương 36: Những việc Asanagi không thể làm",
+        "chapter-37": "Chương 37: Tạch gacha",
+        "chapter-38": "Chương 38: Đáng lẽ chỉ có hai ta",
+        "chapter-39": "Chương 39: Sự thay đổi trong thâm tâm",
+        "chapter-40": "Chương 40: Cuối tuần +1 (Phần Một)",
     }
 }

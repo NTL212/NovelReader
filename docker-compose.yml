@@ -7,4 +7,6 @@ services:
     volumes:
       # Mount thư mục dữ liệu Light Novels từ workspace
       - /home/ubuntu/.openclaw/workspace/projects/light-novels:/home/ubuntu/.openclaw/workspace/projects/light-novels
+      # Mount file titles.py để cập nhật metadata mà không cần rebuild
+      - /home/ubuntu/.openclaw/workspace/projects/shonovel-reader/titles.py:/app/titles.py
     restart: unless-stopped
