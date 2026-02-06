@@ -13,7 +13,7 @@
         rel="stylesheet">
     <style>
         :root {
-            /* Base Theme Variables */
+            /* Light Theme (Default) */
             --bg-primary: #ffffff;
             --bg-secondary: #f9fafb;
             --text-primary: #111827;
@@ -24,56 +24,63 @@
         }
 
         /* Sepia Theme */
-        [data-theme="sepia"] {
-            --bg-primary: #f4ecd8;
-            --bg-secondary: #eaddcf;
-            --text-primary: #433422;
-            --text-secondary: #5b4636;
-            --border-color: #d7c9b1;
+        html[data-theme="sepia"],
+        html[data-theme="sepia"] body {
+            --bg-primary: #f4ecd8 !important;
+            --bg-secondary: #eaddcf !important;
+            --text-primary: #433422 !important;
+            --text-secondary: #5b4636 !important;
+            --border-color: #d7c9b1 !important;
         }
 
-        /* Dark Theme (Default Dark) */
-        [data-theme="dark"],
-        .dark {
-            --bg-primary: #18181b;
-            /* zinc-950 */
-            --bg-secondary: #27272a;
-            /* zinc-800 */
-            --text-primary: #f4f4f5;
-            /* zinc-100 */
-            --text-secondary: #a1a1aa;
-            /* zinc-400 */
-            --border-color: #27272a;
+        /* Dark Theme */
+        html[data-theme="dark"],
+        html[data-theme="dark"] body {
+            --bg-primary: #18181b !important;
+            --bg-secondary: #27272a !important;
+            --text-primary: #f4f4f5 !important;
+            --text-secondary: #a1a1aa !important;
+            --border-color: #3f3f46 !important;
         }
 
-        /* AMOLED Theme */
-        [data-theme="amoled"] {
-            --bg-primary: #000000;
-            --bg-secondary: #121212;
-            --text-primary: #e5e5e5;
-            --text-secondary: #a3a3a3;
-            --border-color: #333333;
+        /* AMOLED Theme - MUST come after Dark to override */
+        html[data-theme="amoled"],
+        html[data-theme="amoled"] body {
+            --bg-primary: #000000 !important;
+            --bg-secondary: #0a0a0a !important;
+            --text-primary: #e5e5e5 !important;
+            --text-secondary: #a3a3a3 !important;
+            --border-color: #262626 !important;
         }
 
+        /* Apply variables to body and main areas */
         body {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
             font-family: 'Inter', sans-serif;
             scroll-behavior: smooth;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Applied to components */
+        /* Theme utility classes */
+        .theme-bg-primary {
+            background-color: var(--bg-primary) !important;
+        }
+
         .theme-bg-secondary {
-            background-color: var(--bg-secondary);
+            background-color: var(--bg-secondary) !important;
         }
 
         .theme-border {
-            border-color: var(--border-color);
+            border-color: var(--border-color) !important;
+        }
+
+        .theme-text-primary {
+            color: var(--text-primary) !important;
         }
 
         .theme-text-secondary {
-            color: var(--text-secondary);
+            color: var(--text-secondary) !important;
         }
 
         .serif {
@@ -216,11 +223,10 @@
     </script>
 </head>
 
-<body class="bg-gray-50 dark:bg-zinc-950 text-gray-800 dark:text-gray-100 transition-smooth min-h-screen">
+<body class="transition-smooth min-h-screen">
 
     <!-- Reading Progress Bar -->
-    <div id="reading-progress-container"
-        class="fixed top-0 left-0 w-full h-1.5 bg-gray-200 dark:bg-zinc-800 z-[60] hidden">
+    <div id="reading-progress-container" class="fixed top-0 left-0 w-full h-1.5 theme-bg-secondary z-[60] hidden">
         <div id="reading-progress-bar"
             class="h-full bg-emerald-500 w-0 transition-all duration-100 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]">
         </div>
@@ -228,7 +234,7 @@
 
     <!-- Floating Navigation Bar -->
     <nav
-        class="floating-nav fixed top-4 left-4 right-4 z-50 bg-white/90 dark:bg-zinc-900/90 rounded-2xl border border-gray-200 dark:border-zinc-800 px-6 py-4 shadow-lg shadow-black/5 dark:shadow-black/20">
+        class="floating-nav fixed top-4 left-4 right-4 z-50 theme-bg-secondary rounded-2xl border theme-border px-6 py-4 shadow-lg">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <h1 class="text-xl font-semibold tracking-tight">
                 <span class="bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">Sho
@@ -236,7 +242,7 @@
             </h1>
             <div class="flex items-center gap-3">
                 <button id="toggle-dark"
-                    class="p-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
+                    class="p-2.5 rounded-xl theme-bg-secondary hover:bg-emerald-500/20 transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500"
                     aria-label="Chuyển đổi chế độ sáng/tối">
                     <svg id="moon-icon" class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
@@ -252,7 +258,7 @@
                     </svg>
                 </button>
                 <button id="library-btn"
-                    class="px-4 py-2 text-sm font-medium rounded-xl bg-gray-100 dark:bg-zinc-800 hover:bg-emerald-500 hover:text-white transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950">
+                    class="px-4 py-2 text-sm font-medium rounded-xl theme-bg-secondary hover:bg-emerald-500 hover:text-white transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500">
                     Thư viện
                 </button>
             </div>
@@ -313,15 +319,15 @@
 
         <!-- Reader View (Hidden by default) -->
         <section id="reader-view" class="hidden">
-            <div class="flex justify-between items-center mb-10 border-b border-gray-200 dark:border-zinc-800 pb-4">
+            <div class="flex justify-between items-center mb-10 border-b theme-border pb-4">
                 <button id="back-to-chapters"
-                    class="text-sm font-medium text-gray-500 dark:text-zinc-400 hover:text-emerald-500 transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 rounded-lg px-2 py-1 -ml-2">
+                    class="text-sm font-medium theme-text-secondary hover:text-emerald-500 transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 rounded-lg px-2 py-1 -ml-2">
                     ← Danh sách chương
                 </button>
                 <div class="flex gap-2 items-center relative">
                     <!-- Settings Toggle -->
                     <button id="reader-settings-btn"
-                        class="p-2 rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-emerald-500 hover:text-white transition-smooth focus:ring-2 focus:ring-emerald-500 theme-bg-secondary"
+                        class="p-2 rounded-lg theme-bg-secondary hover:bg-emerald-500 hover:text-white transition-smooth focus:ring-2 focus:ring-emerald-500"
                         aria-label="Cài đặt giao diện">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -369,17 +375,16 @@
                     </div>
                 </div>
             </div>
-            <article id="reader-content"
-                class="serif reader-mode whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed">
+            <article id="reader-content" class="serif reader-mode whitespace-pre-wrap leading-relaxed">
                 <!-- Content will be injected here -->
             </article>
             <div class="mt-20 flex justify-between gap-4">
                 <button id="prev-chap"
-                    class="btn-primary flex-1 p-4 bg-gray-200 dark:bg-zinc-800 rounded-xl font-medium hover:bg-emerald-500 hover:text-white transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950">
+                    class="btn-primary flex-1 p-4 theme-bg-secondary rounded-xl font-medium hover:bg-emerald-500 hover:text-white transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500">
                     ← Chương trước
                 </button>
                 <button id="next-chap"
-                    class="btn-primary flex-1 p-4 bg-gray-200 dark:bg-zinc-800 rounded-xl font-medium hover:bg-emerald-500 hover:text-white transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950">
+                    class="btn-primary flex-1 p-4 theme-bg-secondary rounded-xl font-medium hover:bg-emerald-500 hover:text-white transition-smooth cursor-pointer focus:ring-2 focus:ring-emerald-500">
                     Chương sau →
                 </button>
             </div>
@@ -387,10 +392,9 @@
 
     </main>
 
-    <footer
-        class="py-10 text-center text-sm text-gray-500 dark:text-zinc-500 border-t border-gray-200 dark:border-zinc-800 mt-10">
+    <footer class="py-10 text-center text-sm theme-text-secondary border-t theme-border mt-10">
         <p class="mb-2">Sho Reader - Crafted for Thành Lợi</p>
-        <p class="text-xs text-gray-400 dark:text-zinc-600">Built with ♥ for the best reading experience</p>
+        <p class="text-xs opacity-60">Built with ♥ for the best reading experience</p>
     </footer>
 
     <script src="/static/js/main.js"></script>
