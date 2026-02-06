@@ -140,11 +140,12 @@ async function loadLibrary() {
             emptyState.classList.add('hidden');
             emptyState.classList.remove('flex');
             novelGrid.classList.remove('hidden');
+            novelGrid.classList.remove('grid'); // Remove grid class from container to handle banner + grid
 
             // Check for last read
-            const lastReadHtml = renderLastReadSection(data);
-
-            novelGrid.innerHTML = data.map(novel => `
+            const lastReadHtml = renderLastReadSection();
+            
+            const gridHtml = data.map(novel => `
                 <div onclick="loadChapters('${novel.id}')" 
                      class="group cursor-pointer focus-within:ring-2 focus-within:ring-emerald-500 rounded-2xl"
                      tabindex="0"
@@ -161,11 +162,7 @@ async function loadLibrary() {
                 </div>
             `).join('');
 
-            // Prepend last read if exists
-            if (lastReadHtml) {
-                // Optional: Insert last read section above grid
-                // For now, let's keep it simple or implement a separate "Continue Reading" banner later
-            }
+            novelGrid.innerHTML = lastReadHtml + `<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">${gridHtml}</div>`;
         }
     } catch (error) {
         console.error('Failed to load library:', error);
@@ -175,12 +172,40 @@ async function loadLibrary() {
     }
 }
 
-// Helper to render last read (placeholder for now)
-function renderLastReadSection(novels) {
+// Helper to render last read
+function renderLastReadSection() {
     const lastRead = JSON.parse(localStorage.getItem('last_read_session'));
     if (!lastRead) return '';
-    // Implementation for "Continue Reading" banner can go here
-    return '';
+    
+    return `
+        <div id="continue-reading-banner" class="mb-10 p-6 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-500 mb-1">Tiếp tục đọc</h4>
+                    <p class="font-semibold text-gray-800 dark:text-gray-100">${lastRead.novelId.replace(/-/g, " ").title()}</p>
+                    <p class="text-sm text-gray-500 dark:text-zinc-400">${lastRead.chapterTitle}</p>
+                </div>
+            </div>
+            <button onclick="resumeReading()" class="w-full md:w-auto px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-smooth shadow-lg shadow-emerald-500/25">
+                Đọc tiếp
+            </button>
+        </div>
+    `;
+}
+
+async function resumeReading() {
+    const lastRead = JSON.parse(localStorage.getItem('last_read_session'));
+    if (!lastRead) return;
+    
+    // First load chapters to populate state
+    await loadChapters(lastRead.novelId);
+    // Then open the specific chapter
+    openChapter(lastRead.chapterIndex);
 }
 
 // Load Chapters
