@@ -5,6 +5,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
+try:
+    from titles import CHAPTER_TITLES
+except ImportError:
+    CHAPTER_TITLES = {}
+
 app = FastAPI(title="Sho Reader")
 
 # Đường dẫn đến thư mục chứa Light Novels
@@ -74,9 +79,12 @@ async def get_chapters(novel_id: str):
     chapters = []
     files = sorted(chapter_path.glob("chapter-*.txt"), key=lambda x: int(x.stem.split("-")[-1]) if x.stem.split("-")[-1].isdigit() else 0)
     for f in files:
+        chapter_id = f.stem
+        # Lấy tiêu đề từ mapping, nếu không có thì dùng mặc định
+        title = CHAPTER_TITLES.get(novel_id, {}).get(chapter_id, chapter_id.replace("-", " ").title())
         chapters.append({
-            "id": f.stem,
-            "title": f.stem.replace("-", " ").title()
+            "id": chapter_id,
+            "title": title
         })
     return chapters
 

@@ -1,0 +1,25 @@
+# Mapping tiêu đề cho bộ Kurasu de Nibanme
+CHAPTER_TITLES = {
+    "kurasu-de-nibanme": {
+        "chapter-1": "Chương 1: Bạn của tôi đang ở đâu?",
+        "chapter-2": "Chương 2: Lời mời bất ngờ",
+        "chapter-3": "Chương 3: Khoảng cách giữa hai người",
+        "chapter-4": "Chương 4: Buổi chiều sau giờ học",
+        "chapter-5": "Chương 5: Bí mật nhỏ",
+        "chapter-6": "Chương 6: Thay đổi dần dần",
+        "chapter-7": "Chương 7: Cảm xúc không tên",
+        "chapter-8": "Chương 8: Ánh mắt của cô ấy",
+        "chapter-9": "Chương 9: Lời hứa",
+        "chapter-10": "Chương 10: Phía sau sự dễ thương",
+        "chapter-11": "Chương 11: Ngày nghỉ cùng nhau",
+        "chapter-12": "Chương 12: Sự cố tại nhà ăn",
+        "chapter-13": "Chương 13: Những điều chưa nói",
+        "chapter-14": "Chương 14: Cuộc gặp gỡ tình cờ",
+        "chapter-15": "Chương 15: Cơn mưa rào",
+        "chapter-16": "Chương 16: Dưới hiên trường",
+        "chapter-17": "Chương 17: Cảm giác ấm áp",
+        "chapter-18": "Chương 18: Lời thú nhận thầm lặng",
+        "chapter-19": "Chương 19: Tiến gần hơn một chút",
+        "chapter-20": "Chương 20: Làm bạn với người dễ thương nhì lớp",
+    }
+}
