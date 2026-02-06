@@ -12,6 +12,8 @@ const progressContainer = document.getElementById('reading-progress-container');
 let currentNovelId = '';
 let chapters = [];
 let currentChapterIndex = -1;
+let currentPage = 1;
+const chaptersPerPage = 10;
 let scrollTimeout;
 
 // Initialize
@@ -181,43 +183,64 @@ function renderLastReadSection(novels) {
 // Load Chapters
 async function loadChapters(novelId) {
     currentNovelId = novelId;
+    currentPage = 1; // Reset to page 1
 
     try {
         const res = await fetch(`/api/novel/${novelId}/chapters`);
         chapters = await res.json();
 
         document.getElementById('novel-title').innerText = novelId.replace(/-/g, " ").title();
-        const list = document.getElementById('chapter-list');
-
-        // Get progress for each chapter to show visual indicator
-        list.innerHTML = chapters.map((chap, index) => {
-            const progress = getChapterProgress(novelId, index);
-            const isRead = progress > 90;
-            const inProgress = progress > 0 && progress <= 90;
-
-            let statusIcon = '';
-            if (isRead) statusIcon = `<span class="text-emerald-500 text-xs flex items-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Đã đọc
-            </span>`;
-            else if (inProgress) statusIcon = `<span class="text-amber-500 text-xs font-medium">${Math.round(progress)}%</span>`;
-
-            return `
-            <div onclick="openChapter(${index})" 
-                 class="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 cursor-pointer hover:border-emerald-500 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-smooth focus-within:ring-2 focus-within:ring-emerald-500 flex justify-between items-center"
-                 tabindex="0"
-                 role="button"
-                 aria-label="Đọc ${chap.title}"
-                 onkeydown="if(event.key==='Enter') openChapter(${index})">
-                <span class="text-gray-700 dark:text-gray-200">${chap.title}</span>
-                ${statusIcon}
-            </div>
-        `}).join('');
-
+        renderChapterListPage();
         switchView('chapters');
     } catch (error) {
         console.error('Failed to load chapters:', error);
     }
+}
+
+function renderChapterListPage() {
+    const list = document.getElementById('chapter-list');
+    const paginationEl = document.getElementById('chapter-list-pagination');
+    const pageInfo = document.getElementById('page-info');
+    
+    const totalPages = Math.ceil(chapters.length / chaptersPerPage);
+    const start = (currentPage - 1) * chaptersPerPage;
+    const end = start + chaptersPerPage;
+    const currentChapters = chapters.slice(start, end);
+
+    // Show/Hide pagination
+    if (totalPages > 1) {
+        paginationEl.classList.remove('hidden');
+        pageInfo.innerText = `Trang ${currentPage} / ${totalPages}`;
+        document.getElementById('prev-page').disabled = currentPage === 1;
+        document.getElementById('next-page').disabled = currentPage === totalPages;
+    } else {
+        paginationEl.classList.add('hidden');
+    }
+
+    list.innerHTML = currentChapters.map((chap, i) => {
+        const globalIndex = start + i;
+        const progress = getChapterProgress(currentNovelId, globalIndex);
+        const isRead = progress > 90;
+        const inProgress = progress > 0 && progress <= 90;
+
+        let statusIcon = '';
+        if (isRead) statusIcon = `<span class="text-emerald-500 text-xs flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            Đã đọc
+        </span>`;
+        else if (inProgress) statusIcon = `<span class="text-amber-500 text-xs font-medium">${Math.round(progress)}%</span>`;
+
+        return `
+        <div onclick="openChapter(${globalIndex})" 
+             class="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 cursor-pointer hover:border-emerald-500 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-smooth focus-within:ring-2 focus-within:ring-emerald-500 flex justify-between items-center"
+             tabindex="0"
+             role="button"
+             aria-label="Đọc ${chap.title}"
+             onkeydown="if(event.key==='Enter') openChapter(${globalIndex})">
+            <span class="text-gray-700 dark:text-gray-200">${chap.title}</span>
+            ${statusIcon}
+        </div>
+    `}).join('');
 }
 
 // Open Chapter
@@ -320,6 +343,23 @@ function switchView(view) {
 document.getElementById('library-btn').onclick = () => switchView('library');
 document.getElementById('back-to-lib').onclick = () => switchView('library');
 document.getElementById('back-to-chapters').onclick = () => switchView('chapters');
+
+document.getElementById('prev-page').onclick = () => {
+    if (currentPage > 1) {
+        currentPage--;
+        renderChapterListPage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
+
+document.getElementById('next-page').onclick = () => {
+    const totalPages = Math.ceil(chapters.length / chaptersPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderChapterListPage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
 
 document.getElementById('next-chap').onclick = () => {
     if (currentChapterIndex < chapters.length - 1) {
