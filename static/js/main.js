@@ -18,17 +18,91 @@ let scrollTimeout;
 document.addEventListener('DOMContentLoaded', () => {
     loadLibrary();
     setupTheme();
+    // Navbar Dark/Light Toggle Logic (Outside Reader)
+    const navToggle = document.getElementById('toggle-dark');
+    if (navToggle) {
+        navToggle.addEventListener('click', () => {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            const isDark = currentTheme === 'dark' || currentTheme === 'amoled';
+            setTheme(isDark ? 'light' : 'dark');
+        });
+    }
+
     loadFontSize(); // Restore font size preference
     setupScrollTracking();
 });
 
-// Theme Setup with icon toggle
+// Theme and Settings Setup
 function setupTheme() {
-    const btn = document.getElementById('toggle-dark');
+    // Settings Modal Toggle
+    const settingsBtn = document.getElementById('reader-settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+
+    // Toggle modal
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsPanel.classList.toggle('hidden');
+        });
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+        if (settingsPanel && !settingsPanel.classList.contains('hidden') &&
+            !settingsPanel.contains(e.target) &&
+            e.target !== settingsBtn &&
+            !settingsBtn.contains(e.target)) {
+            settingsPanel.classList.add('hidden');
+        }
+    });
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+}
+
+// Set Theme Function
+window.setTheme = function (theme) {
+    // Remove all theme attributes first
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.classList.remove('dark'); // Remove Tailwind dark mode
+
+    // Apply new theme
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // Handle Tailwind Dark Mode compatibility
+    if (theme === 'dark' || theme === 'amoled') {
+        document.documentElement.classList.add('dark');
+    }
+
+    // Save preference
+    localStorage.setItem('theme', theme);
+
+    // Update active state in settings panel (visual feedback)
+    updateThemeButtons(theme);
+}
+
+function updateThemeButtons(activeTheme) {
+    const buttons = document.querySelectorAll('#settings-panel button[onclick^="setTheme"]');
+    buttons.forEach(btn => {
+        // Simple check based on onclick attribute content
+        if (btn.getAttribute('onclick').includes(activeTheme)) {
+            btn.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2');
+            if (activeTheme === 'dark' || activeTheme === 'amoled') {
+                btn.classList.add('ring-offset-zinc-800');
+            } else {
+                btn.classList.remove('ring-offset-zinc-800');
+            }
+        } else {
+            btn.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2', 'ring-offset-zinc-800');
+        }
+    });
+
+    // Also update main toggle icon in Navbar (if it exists - though we moved to reader settings)
     const moonIcon = document.getElementById('moon-icon');
     const sunIcon = document.getElementById('sun-icon');
-
-    function updateIcons(isDark) {
+    if (moonIcon && sunIcon) {
+        const isDark = activeTheme === 'dark' || activeTheme === 'amoled';
         if (isDark) {
             moonIcon.classList.remove('hidden');
             sunIcon.classList.add('hidden');
@@ -36,22 +110,6 @@ function setupTheme() {
             moonIcon.classList.add('hidden');
             sunIcon.classList.remove('hidden');
         }
-    }
-
-    btn.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark');
-        const isDark = document.documentElement.classList.contains('dark');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        updateIcons(isDark);
-    });
-
-    // Load saved theme
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-        document.documentElement.classList.remove('dark');
-        updateIcons(false);
-    } else {
-        updateIcons(true);
     }
 }
 
