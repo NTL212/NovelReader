@@ -1,0 +1,17 @@
+name: Build and Deploy Sho Reader
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build and Restart Docker
+        run: |
+          cd projects/shonovel-reader
+          docker compose up -d --build
