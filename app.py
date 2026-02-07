@@ -1,16 +1,18 @@
 import os
 import json
 import redis.asyncio as redis
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from pymongo import MongoClient
+from pydantic import BaseModel
+from typing import List, Optional
 
 app = FastAPI(title="Sho Reader")
 
-# Cấu hình MongoDB
+# --- Cấu hình Database ---
 DEFAULT_MONGO_URI = "mongodb+srv://loint2101_db_user:Lcz2TWDTbWfSqJna@cluster0.cdad8y0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 MONGO_URI = os.getenv("MONGO_URI", DEFAULT_MONGO_URI)
 DB_NAME = "shonovel_db"
@@ -19,12 +21,25 @@ client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 collection = db["chapters"]
 novel_meta_collection = db["novels"]
+lore_collection = db["lore"] # Collection cho Wiki Ngữ Cảnh
 
 # Cấu hình Redis
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 
-# Xác định thư mục gốc của ứng dụng
+# --- Pydantic Models cho Lore System ---
+class LoreStep(BaseModel):
+    min_chapter: int
+    content: str
+
+class LoreResponse(BaseModel):
+    entity_id: str
+    name: str
+    type: str
+    visible_description: str
+    spoiler_free_steps: List[LoreStep]
+
+# --- Cấu hình File System ---
 BASE_DIR = Path(__file__).resolve().parent
 
 def find_path(dir_name: str):
@@ -42,6 +57,8 @@ os.makedirs(templates_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 templates = Jinja2Templates(directory=str(templates_dir))
 
+# --- API Endpoints ---
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     try:
@@ -53,18 +70,14 @@ async def read_root(request: Request):
 async def get_library():
     """Lấy danh sách các bộ truyện từ DB kèm metadata (Cached)."""
     CACHE_KEY = "library:novels_list"
-    
-    # Kiểm tra cache
     try:
         cached_data = await redis_client.get(CACHE_KEY)
         if cached_data:
             return json.loads(cached_data)
     except Exception:
-        pass # Fallback to DB if Redis is down
+        pass
 
     novel_ids = collection.distinct("novel_id")
-    
-    # Sửa lỗi N+1 query: Lấy tất cả metadata một lần
     metas_cursor = novel_meta_collection.find(
         {"novel_id": {"$in": novel_ids}},
         {"_id": 0, "novel_id": 1, "tags": 1}
@@ -81,7 +94,6 @@ async def get_library():
             "source": "database"
         })
     
-    # Lưu vào cache (TTL 600s)
     try:
         await redis_client.setex(CACHE_KEY, 600, json.dumps(novels))
     except Exception:
@@ -91,7 +103,6 @@ async def get_library():
 
 @app.get("/api/novel/{novel_id}/chapters")
 async def get_chapters(novel_id: str):
-    """Lấy danh sách chương từ MongoDB."""
     cursor = collection.find(
         {"novel_id": novel_id},
         {"chapter_number": 1, "title": 1, "_id": 0}
@@ -105,15 +116,12 @@ async def get_chapters(novel_id: str):
         })
     
     if not chapters:
-        raise HTTPException(status_code=404, detail="Novel not found in database")
+        raise HTTPException(status_code=404, detail="Novel not found")
     return chapters
 
 @app.get("/api/novel/{novel_id}/{chapter_id}")
 async def get_chapter_content(novel_id: str, chapter_id: str):
-    """Lấy nội dung chi tiết của một chương từ MongoDB (Cached)."""
     CACHE_KEY = f"novel:{novel_id}:content:{chapter_id}"
-
-    # Kiểm tra cache
     try:
         cached_data = await redis_client.get(CACHE_KEY)
         if cached_data:
@@ -124,7 +132,7 @@ async def get_chapter_content(novel_id: str, chapter_id: str):
     try:
         chapter_num = int(chapter_id.split("-")[-1])
     except (ValueError, IndexError):
-        raise HTTPException(status_code=400, detail="Invalid chapter ID format")
+        raise HTTPException(status_code=400, detail="Invalid chapter ID")
 
     doc = collection.find_one(
         {"novel_id": novel_id, "chapter_number": chapter_num},
@@ -132,7 +140,7 @@ async def get_chapter_content(novel_id: str, chapter_id: str):
     )
     
     if not doc:
-        raise HTTPException(status_code=404, detail="Chapter not found in database")
+        raise HTTPException(status_code=404, detail="Chapter not found")
     
     response_data = {
         "id": chapter_id,
@@ -140,13 +148,61 @@ async def get_chapter_content(novel_id: str, chapter_id: str):
         "content": doc.get("content")
     }
 
-    # Lưu vào cache (TTL 86400s)
     try:
         await redis_client.setex(CACHE_KEY, 86400, json.dumps(response_data))
     except Exception:
         pass
     
     return response_data
+
+# --- TÍNH NĂNG MỚI: WIKI NGỮ CẢNH CHỐNG SPOILER ---
+@app.get("/api/lore/{novel_id}/{entity_id}", response_model=LoreResponse)
+async def get_contextual_lore(
+    novel_id: str, 
+    entity_id: str, 
+    current_chapter: int = Query(..., ge=0)
+):
+    """Lấy thông tin Wiki nhân vật/thuật ngữ không bị spoiler dựa trên chương đang đọc."""
+    cache_key = f"lore:{novel_id}:{entity_id}:{current_chapter}"
+
+    try:
+        cached_data = await redis_client.get(cache_key)
+        if cached_data:
+            return json.loads(cached_data)
+    except Exception:
+        pass
+
+    entity = lore_collection.find_one(
+        {"novel_id": novel_id, "entity_id": entity_id},
+        {"_id": 0} 
+    )
+
+    if not entity:
+        raise HTTPException(status_code=404, detail="Lore entity not found")
+
+    # Lọc nội dung dựa trên tiến độ đọc (Anti-Spoiler)
+    allowed_steps = [
+        step for step in entity.get("description_steps", [])
+        if step["min_chapter"] <= current_chapter
+    ]
+    allowed_steps.sort(key=lambda x: x["min_chapter"])
+
+    full_text = "\n\n".join([step["content"] for step in allowed_steps])
+
+    response_payload = {
+        "entity_id": entity["entity_id"],
+        "name": entity["name"],
+        "type": entity.get("type", "unknown"),
+        "visible_description": full_text,
+        "spoiler_free_steps": allowed_steps
+    }
+
+    try:
+        await redis_client.setex(cache_key, 3600, json.dumps(response_payload))
+    except Exception:
+        pass
+
+    return response_payload
 
 if __name__ == "__main__":
     import uvicorn

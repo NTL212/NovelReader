@@ -16,6 +16,12 @@ let currentPage = 1;
 const chaptersPerPage = 10;
 let scrollTimeout;
 
+// Lore Keywords Mapping (Entity ID -> Array of keywords to detect)
+const LORE_KEYWORDS_MAP = {
+    "char_asanagi": ["Asanagi", "Umi", "Asanagi Umi"],
+    "char_maehara": ["Maehara", "Maki", "Maehara Maki"]
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadLibrary();
@@ -284,7 +290,9 @@ async function openChapter(index) {
         // Set Chapter Title and Content
         document.getElementById('current-chapter-title').innerText = chap.title;
         const contentEl = document.getElementById('reader-content');
-        contentEl.innerHTML = data.content;
+        
+        // Detect and Highlight Keywords
+        contentEl.innerHTML = detectKeywords(data.content);
 
         // Update Pagination Info
         document.getElementById('chapter-pagination').innerText = `Chương ${index + 1} / ${chapters.length}`;
@@ -312,9 +320,81 @@ async function openChapter(index) {
         updateNavButtons();
 
         switchView('reader');
-        // saveProgress is handled by scroll listener now
     } catch (error) {
         console.error('Failed to load chapter:', error);
+    }
+}
+
+// Lore Keywords Detection
+function detectKeywords(html) {
+    let result = html;
+    const chapterNum = currentChapterIndex + 1;
+
+    for (const [entityId, keywords] of Object.entries(LORE_KEYWORDS_MAP)) {
+        keywords.forEach(keyword => {
+            // Avoid double wrapping and only match whole words
+            const regex = new RegExp(`\\b(${keyword})\\b`, 'g');
+            result = result.replace(regex, `<span class="lore-keyword cursor-help text-emerald-500 border-b border-dotted border-emerald-500/50 hover:bg-emerald-500/10 transition-colors" onclick="showLore('${entityId}', ${chapterNum})">$1</span>`);
+        });
+    }
+    return result;
+}
+
+// Show Lore Modal
+async function showLore(entityId, chapterNum) {
+    try {
+        const res = await fetch(`/api/lore/${currentNovelId}/${entityId}?current_chapter=${chapterNum}`);
+        const data = await res.json();
+        renderLoreModal(data);
+    } catch (error) {
+        console.error('Failed to load lore:', error);
+    }
+}
+
+function renderLoreModal(data) {
+    // Remove existing modal if any
+    const existing = document.getElementById('lore-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'lore-modal';
+    modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300';
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 overflow-hidden transform transition-all scale-100">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-500 px-2 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20">${data.type}</span>
+                        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">${data.name}</h2>
+                    </div>
+                    <button onclick="closeLoreModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-gray-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="prose dark:prose-invert max-w-none text-gray-600 dark:text-zinc-400 text-sm leading-relaxed whitespace-pre-line">
+                    ${data.visible_description}
+                </div>
+                <div class="mt-6 pt-4 border-t border-gray-100 dark:border-zinc-800 flex items-center gap-2 text-[10px] text-gray-400 font-medium">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    Anti-Spoiler Active
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on backdrop click
+    modal.onclick = (e) => {
+        if (e.target === modal) closeLoreModal();
+    };
+}
+
+window.closeLoreModal = function() {
+    const el = document.getElementById('lore-modal');
+    if (el) {
+        el.classList.add('opacity-0');
+        setTimeout(() => el.remove(), 200);
     }
 }
 
@@ -402,7 +482,7 @@ document.getElementById('prev-chap').onclick = () => {
 };
 
 // Font Size Control
-function changeFontSize(delta) {
+window.changeFontSize = function(delta) {
     const el = document.getElementById('reader-content');
     const style = window.getComputedStyle(el, null).getPropertyValue('font-size');
     const currentSize = parseFloat(style);
@@ -418,11 +498,6 @@ function loadFontSize() {
         const el = document.getElementById('reader-content');
         if (el) el.style.fontSize = savedSize + 'px';
     }
-}
-
-// Save reading progress (Legacy simpler version)
-function saveProgress(novelId, index) {
-    localStorage.setItem(`progress_${novelId}`, index);
 }
 
 // --- NEW SCROLL TRACKING LOGIC ---
@@ -455,15 +530,11 @@ function updateProgress() {
     // Update UI
     progressBar.style.width = scrollPercent + '%';
 
-    // Save to localStorage (Throttled could be better here, but for now simple check)
+    // Save to localStorage
     if (currentNovelId && currentChapterIndex >= 0) {
-        // Only save every 1% change or if multiple pixels moved to avoid spamming too much?
-        // Actually localStorage sync is fast enough for text apps.
-
         const key = `scroll_${currentNovelId}_${currentChapterIndex}`;
         localStorage.setItem(key, Math.floor(scrollTop));
 
-        // Also save percentage for chapter list view
         const progressKey = `percent_${currentNovelId}_${currentChapterIndex}`;
         localStorage.setItem(progressKey, scrollPercent.toFixed(1));
     }
