@@ -13,6 +13,12 @@ jobs:
 
       - name: Build and Restart Docker
         run: |
-          # Dùng -v (remove anonymous volumes) và dọn dẹp các container cũ bị kẹt
-          docker compose down -v || true
+          # Dọn dẹp triệt để container bị kẹt theo tên
+          docker rm -f shonovel-reader || true
+          docker rm -f shonovel-redis || true
+          
+          # Dọn dẹp theo compose file, xóa cả các container mồ côi (orphans)
+          docker compose down --remove-orphans || true
+          
+          # Build và khởi chạy bản mới
           docker compose up -d --build
