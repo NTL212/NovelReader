@@ -10,3 +10,9 @@ services:
       # Mount file titles.py để cập nhật metadata mà không cần rebuild
       - /home/ubuntu/.openclaw/workspace/projects/shonovel-reader/titles.py:/app/titles.py
     restart: unless-stopped
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: shonovel-redis
