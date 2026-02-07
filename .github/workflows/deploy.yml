@@ -13,5 +13,6 @@ jobs:
 
       - name: Build and Restart Docker
         run: |
-          cd projects/shonovel-reader
+          # Checkout code sẽ lấy nội dung của REPO vào root của workspace runner.
+          # Vì repo này là chính là project NovelReader, nên không cần cd vào projects/shonovel-reader nữa.
           docker compose up -d --build
