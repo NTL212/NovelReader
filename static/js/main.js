@@ -26,6 +26,7 @@ const LORE_KEYWORDS_MAP = {
 document.addEventListener('DOMContentLoaded', () => {
     loadLibrary();
     setupTheme();
+    registerServiceWorker(); // Register PWA Service Worker
     // Navbar Dark/Light Toggle Logic (Outside Reader)
     const navToggle = document.getElementById('toggle-dark');
     if (navToggle) {
@@ -39,6 +40,31 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFontSize(); // Restore font size preference
     setupScrollTracking();
 });
+
+// PWA Service Worker Registration
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/static/sw.js')
+                .then(reg => console.log('SW Registered!', reg))
+                .catch(err => console.log('SW Registration failed:', err));
+        });
+    }
+}
+
+// Smart Pre-load Next Chapters
+function preloadNextChapters(novelId, currentIndex) {
+    const nextIndices = [currentIndex + 1, currentIndex + 2];
+    nextIndices.forEach(idx => {
+        if (idx < chapters.length) {
+            const chap = chapters[idx];
+            // Fetch but don't wait, Service Worker will intercept and cache
+            fetch(`/api/novel/${novelId}/${chap.id}`, { priority: 'low' })
+                .then(() => console.log(`[Smart Pre-load] Cached: ${chap.title}`))
+                .catch(() => {});
+        }
+    });
+}
 
 // Theme and Settings Setup
 function setupTheme() {
@@ -318,6 +344,9 @@ async function openChapter(index) {
 
         // Update navigation buttons state
         updateNavButtons();
+
+        // Smart Pre-load Next Chapters
+        preloadNextChapters(currentNovelId, index);
 
         switchView('reader');
     } catch (error) {
