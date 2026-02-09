@@ -110,9 +110,12 @@ async def get_chapters(novel_id: str):
     
     chapters = []
     for doc in cursor:
+        c_num = doc.get('chapter_number')
+        if c_num is None:
+            continue
         chapters.append({
-            "id": f"chapter-{doc['chapter_number']}",
-            "title": doc.get("title", f"Chương {doc['chapter_number']}")
+            "id": f"chapter-{c_num}",
+            "title": doc.get("title", f"Chương {c_num}")
         })
     
     if not chapters:
